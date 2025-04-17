@@ -1,55 +1,54 @@
+// src/pages/Login.jsx
 import { useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-function Login() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
 
-      // Enregistre le token JWT dans localStorage
-      localStorage.setItem("token", res.data.token);
-      setMessage("Connexion réussie !");
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) {
-      setMessage("Identifiants incorrects.");
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.user.role);
+      if (data.user.role === "employer") {
+        navigate("/employer");
+      } else if (data.user.role === "manager") {
+        navigate("/manager");
+      }
+    } else {
+      alert(data.message || "Échec de connexion");
     }
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <form onSubmit={handleLogin}>
       <h2>Connexion</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email :</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Mot de passe :</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Se connecter</button>
-      </form>
-      {message && <p>{message}</p>}
-    </div>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      /><br/>
+      <input
+        type="password"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      /><br/>
+      <button type="submit">Se connecter</button>
+    </form>
   );
 }
-
-export default Login;
